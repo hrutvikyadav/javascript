@@ -161,9 +161,75 @@ ex. to generate URL slugs based on page title:\
 
 ___
 
+## Currying
+
 The `arity` of a function is the _number of arguments it requires_\
 _`Currying` a function_ means to __convert a _function of N arity_ into _N functions of arity 1_ .__\
 i.e. it _restructures_ a function so it takes _one argument_\
 then _`returns` **another function**_ that takes the _next argument_, and so on
+
+```js
+// currying `add(x, y, z)` with normal syntax
+function add(x) {
+  return function(y){
+    return function(z){
+      return x+y+z
+    }
+  }
+}
+
+add(10)(20)(30);
+
+// currying with arrow function syntax
+const added = x => y => z => x+y+z
+
+console.log(added(2)(3)(2))
+```
+
+When _all function args can't be supplied_ at the same time,\
+`currying` is useful to _store each function call_ in a __variable__.\
+This way the __variable__ _holds reference to the next fn call_ which takes the _next arg when available_
+
+Example: In the above code, if the second arg to add was not available when `add()` was called,
+then we can just call add with first arg, and store the returned fn reference in a variable.
+When the second arg is available, we can call this variable with it
+
+```js
+// the complete fn call is added(x)(y)(z)
+// here we only have `x` available
+
+const waitForY = added(10)
+...
+// now `y` is available but not `z`
+const waitForZ = waitForY(20)
+...
+// finally `z` is available
+let result = waitForZ(30)
+```
+
+## Partial Application
+
+It is defined as
+
+1. __calling a fn with some args__,\
+see line 7 in below snippet
+2. and return _another fn_ which can be __called with more args__\
+see line 8
+
+> `Function.prototype.bind` is used to borrow a method from another existing object.\
+__`this` value__ _of the new returned function_ is set to _1st arg_ provided to bind\
+any _further args provided to bind_, will be _prepended to the __new function args__ when it is **called**_
+
+```js
+1| function add(a, b, c) {
+2|     return a + b + c
+3| }
+4| 
+5| // use bind to set `this` value of newAdd = to `add` object
+6| // the optional args will be used when calling the newAdd, we only need to provide partial/remaining args
+7| const newAdd = add.bind(this, 1, 2)
+8| newAdd(3)
+9| // this will result in add(1, 2, 3) .... i.e. return value will be 5
+```
 
 ___
