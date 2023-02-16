@@ -73,6 +73,150 @@ This automates the manual loading of scripts in html and and using global variab
 
 `Browserify` came out first, later `webpack` became popular due to it's use in `react`
 
+## Webpack
+
+1. Install the `webpack` and `webpack-cli` npm package as a dev dependency
+
+    ```bash
+    $ npm install webpack webpack-cli --save-dev
+    Installs webpack as dev dependency and the cli tool to interact with it
+    ```
+
+2. Use the installed binary to bundle your js file
+
+    ```bash
+    $ ./node_modules/.bin/webpack index.js --mode=development
+    ```
+
+    > This will look for require statements in index.js, replace them with appropriate code, and by default, generate final output in `dist/main.js`
+    The mode=development flag tells webpack to generate a dev friendly, readable output, instead of a minified output which can be generated for the production environment
+3. Load this output in html using script tag
+
+    ```html
+    ...
+    <script src="dist/main.js"></script>
+    ...
+    ```
+
+Now, everytime the index.js file changes, _we need to re run the webpack command_
+To _avoid specifying the same options again and again_, we can add a `webpack.config.js` to our project root\
+Then just run the webpack binary without any command line options
+
+For the above command, config could look like this
+
+```js
+// webpack.config.js
+module.exports = {
+  mode: 'development',
+  entry: './index.js',
+  output: {
+    filename: 'main.js',
+    path: path.resolve(__dirname, 'dist')
+  }
+};
+```
+
+> Note: due to addition of a build step, we can now add other powerful features that can be added to the workflow. See below features
+
+---
+
+### Transpiling to add new language features
+
+Adding new features take time as browsers are slow in this aspect
+The solution to this is to add new features, in `js` or in another language like `sass`, `typescript` etc and transpile[^transpile] these to browser compatible languages\
+ex. sass -> css, typescript -> javascript
+
+`babel` is a transpiler that takes latest features[^ES2015] in js and transpiles them to browser compatible versions of js.
+
+We can use babel with our webpack build step
+
+1. Install babel npm package
+
+    ```bash
+    $ npm install @babel/core @babel/preset-env babel-loader --save-dev
+    ```
+
+    installs 3 separate packages as dev dependencies — `@babel/core` (the main part of babel), `@babel/preset-env` (preset defining which new JavaScript features to transpile) and `babel-loader` (package to enable babel to work with webpack)
+
+2. Configure webpack to use babel-loader
+
+    ```js
+    // webpack.config.js
+    module.exports = {
+        mode: 'development',
+        entry: './index.js',
+        output: {
+            filename: 'main.js',
+            publicPath: 'dist'
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.js$/,
+                    exclude: /node_modules/,
+                    use: {
+                        loader: 'babel-loader',
+                        options: {
+                            presets: ['@babel/preset-env']
+                        }
+                    }
+                }
+            ]
+        }
+    };
+    ```
+
+    > This tells webpack to look for js files except those in node_modules, perform transpilation using `babel-loader` with options defined in `@babel/preset/env`
+
+3. Use features released after ES2015 in your project files, re run the webpack binary, see the changes in effect
+4. Cross check the generated ouput file to see if transpilation worked
+
+## Task runner
+
+_Task runners_ are tools that _automate parts of build process_
+Common `tasks` in frontend development include __minifying code, optimizing images, running tests etc__
+
+Popular task runners like `grunt`, `gulp` use _pluggins that wrap other tools_\
+But these days, `npm scripts` are used which _work with other tools directly_
+
+We can modify `package.json` and add `npm scripts` to make working with webpack easier
+
+```js
+{
+    scripts: {
+        ...
+        "build": "webpack --progress --mode=production",
+        // this runs webpack, minifies output for production, and shows the progress %
+
+        "watch": "webpack --progress --watch"
+        // this will re run webpack everytime files js change
+    }
+}
+```
+
+> as node.js knows path of each module, we can run webpack without specifying full path inside `scripts`
+
+Run these scripts with `npm run watch` and `npm run build`
+
+We can also add webpack live server to serve the app contents
+
+- `$ npm install webpack-dev-server --save-dev`
+- add a `serve` script in `package.json`
+
+    ```diff
+    {
+        scripts: {
+            ...
+    +       "serve": "webpack-dev-server --open"
+        }
+    }
+    ```
+
+- start the server with `npm run serve`
+
+We can write npm scripts for running other tasks as well, such as converting Sass to CSS, compressing images, running tests —\
+_anything that has a command line tool_
+
 ---
 
 [^sync]: can slow execution speed
@@ -80,3 +224,5 @@ This automates the manual loading of scripts in html and and using global variab
 [^bs-i]: invalid js syntax in case of browser
 [^bs-v]: valid js syntax in case of browser
 [^npm]: see module bundlers section to see how they enabled use of require statements(which was node.js specification), thus making npm preferred for frontend too
+[^transpile]: convert code from one language to another similar language
+[^ES2015]: next gen features that came after es2015
